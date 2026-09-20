@@ -1,5 +1,7 @@
 # meshcore-airtime
 
+*Nederlands · [English version](README.en.md)*
+
 Meetgereedschap voor zendtijd en padgedrag in een [MeshCore](https://meshcore.co.uk/)
 LoRa-mesh. Bedoeld voor één terugkerende discussie: *"die twee repeaters zitten
 elkaar in de weg, ze herhalen elkaars berichten en vervuilen de mesh."*
@@ -235,5 +237,9 @@ Als de meting parallelle dubbeling laat zien, staan de knoppen in de
 * `loop.detect` — tegen echte loops door afwijkende firmware; helpt niet tegen
   deze vorm van redundantie.
 
+## Licentie
+
+MIT — zie [LICENSE](LICENSE). Gebruiken, aanpassen, hergebruiken en doorgeven
+mag, ook commercieel; de enige voorwaarde is dat de copyrightregel meegaat.
 
 73 de PE1HVH
