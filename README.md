@@ -1,5 +1,9 @@
 # meshcore-airtime
 
+[![Licentie: CC BY-SA 4.0](https://img.shields.io/badge/licentie-CC%20BY--SA%204.0-blue.svg)](LICENSE)
+[![Talen](https://img.shields.io/badge/talen-NL%20%7C%20EN-informational.svg)](#)
+[![Website](https://img.shields.io/badge/web-domca.nl-brightgreen.svg)](https://domca.nl)
+
 *Nederlands · [English version](README.en.md)*
 
 Meetgereedschap voor zendtijd en padgedrag in een [MeshCore](https://meshcore.co.uk/)
