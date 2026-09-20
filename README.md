@@ -20,7 +20,12 @@ Dedupliceert op pakketniveau en kijkt per pakket of twee genoemde repeaters
 elkaar aanvullen (serieel) of hetzelfde werk doen (parallel). Dit is de tweede
 stap, voor als de eerste een verdenking oplevert.
 
-Beide lezen dezelfde bron, hebben geen dependencies buiten de standaardlibrary
+**`meshcore_req_report.py` — wie produceert het verzoekverkeer?**
+Rekent REQ, RESPONSE, ANON_REQ en PATH toe aan de node die ze verstuurde, en
+laat zien of dat verkeer geconcentreerd is bij een paar tools of verspreid over
+gewone gebruikers.
+
+Alle drie lezen dezelfde bron, hebben geen dependencies buiten de standaardlibrary
 en leiden alles af uit `raw_payload` — het volledige pakket inclusief header —
 in plaats van uit velden die de gui er zelf van maakt.
 
@@ -140,6 +145,33 @@ van routed verkeer alleen wat toevallig langs die positie loopt. Het aandeel
 DIRECT is daardoor systematisch te laag. Trek dus geen conclusies over de
 verhouding flood/direct op basis van één ontvanger.
 
+## meshcore_req_report.py — wie produceert het verzoekverkeer?
+
+In de eerste meting bleek bijna de helft van alle pakketten REQ, RESPONSE,
+ANON_REQ en PATH te zijn. De verleiding is dan te zeggen: "dat is
+geautomatiseerd verkeer van tooling". Dat is een vermoeden, geen meting.
+
+Dit script maakt er een meting van. Het leest de bron- en bestemmingshash uit
+de payload (`[dest 1][src 1][MAC 2]` voor REQ, RESPONSE, TXT_MSG en PATH; bij
+ANON_REQ de volledige afzenderpubkey) en telt per node. Nodenamen haalt het uit
+de ADVERT-pakketten in hetzelfde log, dus je hoeft geen contactenlijst aan te
+leveren.
+
+```bash
+python3 meshcore_req_report.py rxlog.jsonl --targets
+python3 meshcore_req_report.py rxlog.jsonl --top 30 --csv bronnen.csv
+```
+
+De uitslag staat in de concentratietabel. Komt meer dan 60% van alle REQ van de
+top 3 bronnen, dan is het inderdaad een paar pollende tools. Is het verdeeld
+over tientallen nodes, dan is het gewoon gebruik en houdt de bewering geen
+stand.
+
+Wat het niet kan: ACK, GRP_TXT en GRP_DATA dragen geen afzender en zijn dus aan
+geen node toe te rekenen. En RESPONSE is bij een vast ontvangstpunt
+ondervertegenwoordigd, omdat gericht verkeer alleen wordt gehoord als het
+langskomt.
+
 ## meshcore_pair_report.py — serieel of parallel?
 
 Eerst uitzoeken welke pad-hash bij welke repeater hoort:
@@ -166,6 +198,7 @@ Belangrijkste opties:
 | `--min-hash-size N` | negeer kopieën met kortere pad-hashes (zie hieronder) |
 | `--split TIJD` | splits in een venster voor en na, met vergelijking |
 | `--since` / `--until` | begrens de meetperiode (ISO, UTC) |
+| `--per-observer` | analyseer elke waarnemer apart in plaats van samengevoegd |
 | `--all-routes` | ook DIRECT-verkeer meetellen (default: alleen flood) |
 | `--sf` `--bw` `--cr` | radioparameters voor de zendtijdberekening |
 | `--csv` | per uniek pakket een regel wegschrijven |
@@ -218,6 +251,12 @@ Lees dit voordat je ergens een cijfer uit dit gereedschap neerlegt.
 * **Controleer de dekking van je logbestand,** niet alleen de tijdspanne. Een
   archief dat op papier vijf maanden beslaat maar in werkelijkheid dertien
   dagen aan records bevat, levert onzinnige gemiddelden per uur.
+* **Analyseer per waarnemer, niet over alle rx-logs tegelijk.** Pool je twee
+  ontvangers, dan telt een pakket dat ze allebei hoorden dubbel, en kan "beide
+  repeaters betrokken" ontstaan doordat de ene waarnemer het via A hoorde en de
+  andere via B — terwijl geen van beiden dubbeling zag. Gebruik
+  `--per-observer`. Parallelle dubbeling is per definitie iets wat één
+  ontvangstpunt waarneemt.
 * **DIRECT-verkeer wordt ondergeteld** bij een vast ontvangstpunt: floods hoor
   je allemaal, routed verkeer alleen als het toevallig langs je loopt.
 

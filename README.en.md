@@ -21,7 +21,12 @@ Deduplicates at packet level and checks, per packet, whether two named repeaters
 complement each other (serial) or do the same job twice (parallel). Step two,
 for when step one raises a suspicion.
 
-Both read the same source, need nothing outside the standard library, and derive
+**`meshcore_req_report.py` — who generates the request traffic?**
+Attributes REQ, RESPONSE, ANON_REQ and PATH to the node that sent them, showing
+whether that traffic is concentrated in a few tools or spread across ordinary
+users.
+
+All three read the same source, need nothing outside the standard library, and derive
 everything from `raw_payload` — the complete packet including its header —
 rather than from fields the GUI derived for you.
 
@@ -138,6 +143,30 @@ only the routed traffic that happens to pass by. The DIRECT share is therefore
 systematically too low. Do not draw conclusions about the flood/direct ratio
 from a single receiver.
 
+## meshcore_req_report.py — who generates the request traffic?
+
+The first measurement showed that nearly half of all packets were REQ,
+RESPONSE, ANON_REQ and PATH. The tempting conclusion is "that is automated
+traffic from tooling". That is a hypothesis, not a measurement.
+
+This script turns it into one. It reads the source and destination hash from
+the payload (`[dest 1][src 1][MAC 2]` for REQ, RESPONSE, TXT_MSG and PATH; the
+full sender public key for ANON_REQ) and counts per node. Node names are
+harvested from the ADVERT packets in the same log, so no contact list is needed.
+
+```bash
+python3 meshcore_req_report.py rxlog.jsonl --targets
+python3 meshcore_req_report.py rxlog.jsonl --top 30 --csv sources.csv
+```
+
+The answer is in the concentration table. If more than 60% of all REQ comes
+from the top 3 sources, it really is a handful of polling tools. Spread across
+dozens of nodes, it is ordinary use and the claim does not hold.
+
+What it cannot do: ACK, GRP_TXT and GRP_DATA carry no sender and cannot be
+attributed. And RESPONSE is under-represented at a fixed receiving point, since
+routed traffic is only heard when it happens to pass by.
+
 ## meshcore_pair_report.py — serial or parallel?
 
 First find out which path hash belongs to which repeater:
@@ -162,6 +191,7 @@ python3 meshcore_pair_report.py rxlog.jsonl \
 | `--min-hash-size N` | ignore copies with shorter path hashes (see below) |
 | `--split TIME` | split into a before and after window, with comparison |
 | `--since` / `--until` | bound the measurement period (ISO, UTC) |
+| `--per-observer` | analyse each observer separately instead of pooled |
 | `--all-routes` | include DIRECT traffic too (default: flood only) |
 | `--sf` `--bw` `--cr` | radio parameters for the airtime calculation |
 | `--csv` | write one row per unique packet |
@@ -214,6 +244,11 @@ Read this before putting any number from these tools in front of anyone.
 * **Check your log's coverage, not just its time span.** An archive that nominally
   spans five months but actually holds thirteen days of records yields nonsense
   hourly averages.
+* **Analyse per observer, not across all rx logs at once.** Pooling two
+  receivers double-counts any packet both of them heard, and "both repeaters
+  involved" can arise purely because observer 1 heard it via A and observer 2
+  via B — while neither saw any duplication. Use `--per-observer`. Parallel
+  duplication is by definition something a single receiving point observes.
 * **DIRECT traffic is undercounted** at a fixed receiving point: you hear all
   floods, but routed traffic only when it happens to pass you.
 

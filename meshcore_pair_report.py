@@ -340,6 +340,25 @@ class Window:
         return 0.0
 
 
+def split_by_source(window):
+    """Eén venster per waarnemer.
+
+    Pool je waarnemers, dan telt een pakket dat twee ontvangers allebei hoorden
+    dubbel, en kan 'beide repeaters betrokken' ontstaan doordat waarnemer 1 het
+    via A hoorde en waarnemer 2 via B - terwijl geen van beiden dubbeling zag.
+    Per waarnemer analyseren voorkomt dat.
+    """
+    out = {}
+    for ident, per_source in window.copies.items():
+        for source, bucket in per_source.items():
+            sub = out.get(source)
+            if sub is None:
+                sub = out[source] = Window(source)
+                sub.first, sub.last = window.first, window.last
+            sub.copies[ident][source] = bucket
+    return out
+
+
 def collect(args, split_at, since, until):
     windows = {}
 
@@ -649,6 +668,9 @@ def build_args():
                    help="alleen flood-verkeer meetellen (default aan)")
     p.add_argument("--all-routes", dest="flood_only", action="store_false",
                    help="ook DIRECT-verkeer meetellen")
+    p.add_argument("--per-observer", action="store_true",
+                   help="analyseer elke waarnemer apart in plaats van samengevoegd; "
+                        "aanbevolen zodra je meer dan een rx-log gebruikt")
     p.add_argument("--csv", default="", help="per uniek pakket een regel naar dit bestand "
                                              "(bij --split een bestand per venster)")
     return p
@@ -739,7 +761,22 @@ def main(argv=None):
         results[name] = st
         title = {"voor": "VOOR de wijziging", "na": "NA de wijziging",
                  "zonder tijd": "records zonder bruikbaar tijdstempel"}.get(name, "")
+
+        if args.per_observer:
+            for source, sub in sorted(split_by_source(windows[name]).items()):
+                sub_st = analyse(sub, target_a, target_b, toa)
+                sub_title = f"waarnemer {source}" + (f" - {title}" if title else "")
+                print_report(sub_st, sub, args.a_name, args.b_name, sub_title)
+            continue
+
         print_report(st, windows[name], args.a_name, args.b_name, title)
+        if len(args.files) > 1:
+            print("LET OP: de cijfers hierboven zijn samengevoegd over "
+                  f"{len(args.files)} rx-logs. Een pakket dat meerdere waarnemers")
+            print("hoorden telt dan meermaals mee, en 'beide repeaters betrokken' kan")
+            print("ontstaan doordat de ene waarnemer het via A hoorde en de andere via B.")
+            print("Draai met --per-observer voor cijfers per waarnemer.")
+            print()
 
         if args.csv and st["rows"]:
             path = args.csv
