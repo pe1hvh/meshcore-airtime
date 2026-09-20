@@ -1,4 +1,7 @@
 # meshcore-airtime
+[![Licentie: CC BY-SA 4.0](https://img.shields.io/badge/licentie-CC%20BY--SA%204.0-blue.svg)](LICENSE)
+[![Language](https://img.shields.io/badge/talen-UK%20%7C%20EN-informational.svg)](#)
+[![Website](https://img.shields.io/badge/web-domca.nl-brightgreen.svg)](https://domca.nl)
 
 *[Nederlandse versie](README.md) · English*
 
