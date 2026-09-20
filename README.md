@@ -235,9 +235,5 @@ Als de meting parallelle dubbeling laat zien, staan de knoppen in de
 * `loop.detect` — tegen echte loops door afwijkende firmware; helpt niet tegen
   deze vorm van redundantie.
 
-## Licentie
-
-Nog te kiezen — zonder licentiebestand geldt "alle rechten voorbehouden" en kan
-niemand dit legaal hergebruiken.
 
 73 de PE1HVH
